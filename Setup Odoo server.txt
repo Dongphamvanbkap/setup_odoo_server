@@ -1,0 +1,139 @@
+Cài đặt chương trình SSH
+Trên win https://mobaxterm.mobatek.net
+Install Git, Pip, Node.js and the tools required to build Odoo dependencies
+		sudo apt-get update
+
+		sudo apt install git python3-pip build-essential wget python3-dev python3-wheel libxslt-dev libzip-dev libldap2-dev libsasl2-dev python3-setuptools node-less
+
+		pip3 install --upgrade pip
+Create Odoo user
+		sudo useradd -m -d /opt/odoo -U -r -s /bin/bash odoo
+Install and configure PostgreSQL
+		sudo apt install postgresql
+
+		sudo su - postgres -c "createuser -s odoo"
+Install Wkhtmltopdf
+		wget https://builds.wkhtmltopdf.org/0.12.1.3/wkhtmltox_0.12.1.3-1~bionic_amd64.deb
+
+		sudo apt install ./wkhtmltox_0.12.1.3-1~bionic_amd64.deb
+Install and Configure Odoo
+		sudo su - odoo
+
+		git clone https://www.github.com/odoo/odoo --depth 1 --branch 12.0 /opt/odoo/odoo12
+Cài đặt các thư viện để chạy code odoo12
+		cd /opt/odoo/odoo12/
+
+		pip3 install -r requirements.txt
+Tạo file .conf
+		exit
+		cd /opt/odoo/odoo12/
+
+		sudo nano /etc/odoo12.conf
+Gõ phím Insert để edit Cấu hình file conf
+
+[options]
+; This is the password that allows database operations:
+db_host = False
+db_port = False
+db_user = odoo
+db_password = False
+addons_path = /opt/odoo/odoo12/addons,/opt/odoo/odoo12/odoo/addons
+Lưu file: Ấn phím Esc và gõ :wq để save file
+apt -y install nginx
+systemctl enable nginx
+Cấu hình đường dẫn cho website
+nano /etc/nginx/sites-available/wisscoffee.com
+Nội dung file
+Nội dung file 
+upstream  odoo {
+    server 127.0.0.1:8069;
+}
+server {
+    listen      80 default; 
+    client_max_body_size 150M;  
+    server_name your-website.com;
+    access_log  /var/log/nginx/your-website.com.access.log;
+    error_log   /var/log/nginx/your-website.com.error.log;
+
+    proxy_buffers 16 64k;
+    proxy_buffer_size 128k;
+
+ location / {
+        proxy_pass  http://odoo;
+        proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
+        proxy_redirect off;
+        proxy_set_header    Host            $host;
+        proxy_set_header    X-Real-IP       $remote_addr;
+        proxy_set_header    X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header    X-Forwarded-Proto https;
+    }
+    location ~* /web/static/ {
+        proxy_cache_valid 200 60m;
+        proxy_buffering on;
+        expires 864000;
+        proxy_pass http://odoo;
+    }
+}
+
+activate the Nginx block by creating a symbolic link
+		sudo ln -s /etc/nginx/sites-available/wisscoffee.com /etc/nginx/sites-enabled/wisscoffee.com
+Delete the default configuration:
+		sudo rm -f /etc/nginx/sites-enabled/default
+
+		sudo nginx -t
+
+		sudo service nginx restart
+
+
+
+Đầu tiên cd /etc/systemd/system
+tạo file ví dụ  sudo nano odoo12.service
+paste :
+
+[Unit]
+Description=Odoo12
+Requires=postgresql.service
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+SyslogIdentifier=odoo
+PermissionsStartOnly=true
+User=odoo 
+Group=odoo 
+ExecStart= /opt/odoo/odoo/odoo-bin -c /etc/odoo.conf
+StandardOutput=journal+console
+
+[Install]
+WantedBy=multi-user.target
+
+
+cái ExectStart: 1 path trỏ đến môi trường python để chạy odoo
+1 cái là trỏ đến thư mục chứa file odoo-bin
+1 cái trỏ đến file config có -c trước path của file config những cái khác cứ để nguyên.
+
+sau đó :
+sudo systemctl daemon-reload  -- để nó chạy ngầm
+sudo systemctl start odoo12  --- start 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
